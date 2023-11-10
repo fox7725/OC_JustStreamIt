@@ -9,7 +9,7 @@
         titreCategorie.style.borderBottom = "1px solid black"
         presentation.appendChild(titreCategorie)
 
-        let films = ["film1", "film2", "film3", "film4", "film5", "film6", "film7"]
+        let films = ["film 1", "film 2", "film 3", "film 4", "film 5", "film 6", "film 7"]
         let ajoutCategorie = document.createElement("div")
         presentation.appendChild(ajoutCategorie)
 
