@@ -1,3 +1,5 @@
+
+
 let categories = ["Films les mieux notés", "catégorie 1", "catégorie 2", "catégorie 3"]
 let presentation = document.getElementById("ensembleCategories")
 let v=0
@@ -23,6 +25,24 @@ while (v < categories.length){
 
     let currentFilmIndex = 0 // Variable pour suivre l'index actuel des films affichés
 
+    function afficherDetailsFilm(nomDuFilm) {
+        let popup = document.createElement("div")
+        popup.setAttribute("id", "popupFilm")
+        popup.textContent = "Détails du film : " + nomDuFilm
+        document.body.appendChild(popup)
+
+        function fermerPopup(e) {
+            if(!popup.contains(e.target)) {
+                popup.remove()
+                document.removeEventListener("click", fermerPopup)
+            }
+        }
+
+        setTimeout(() => {
+            document.addEventListener("click", fermerPopup)
+        }, 0)
+    }
+
     function afficherFilms() {
         // Efface la liste actuelle
         listeDeFilms.innerHTML = ""
@@ -42,6 +62,11 @@ while (v < categories.length){
 
             ajoutPoint.textContent = film
             listeDeFilms.appendChild(ajoutPoint)
+
+            // Ouverture de la modale avec les infos sur le film
+            ajoutPoint.addEventListener("click", () => {
+                afficherDetailsFilm(film)
+            })
         }
     }
 
@@ -60,8 +85,8 @@ while (v < categories.length){
     ajoutCategorie.appendChild(boutonDroite)
 
     boutonDroite.addEventListener("click", () => {
-    currentFilmIndex = (currentFilmIndex + 4) % films.length // Met à jour l'index
-    afficherFilms()
+        currentFilmIndex = (currentFilmIndex + 4) % films.length // Met à jour l'index
+        afficherFilms()
     })
 
     let retourLigne = document.createElement("p")
