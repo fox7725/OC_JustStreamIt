@@ -1,5 +1,3 @@
-
-
 let categories = ["Films les mieux notés", "catégorie 1", "catégorie 2", "catégorie 3"]
 let presentation = document.getElementById("ensembleCategories")
 let v=0
@@ -28,7 +26,15 @@ while (v < categories.length){
     function afficherDetailsFilm(nomDuFilm) {
         let popup = document.createElement("div")
         popup.setAttribute("id", "popupFilm")
-        popup.textContent = "Détails du film : " + nomDuFilm
+
+        let titreFilm = document.createElement("p")
+        titreFilm.textContent = "Titre du film : " + nomDuFilm
+        popup.appendChild(titreFilm)
+
+        let categorieFilm = document.createElement("p")
+        categorieFilm.textContent = "Catégorie du film : " + titreCategorie.textContent
+        popup.appendChild(categorieFilm)
+
         document.body.appendChild(popup)
 
         function fermerPopup(e) {
@@ -38,6 +44,8 @@ while (v < categories.length){
             }
         }
 
+        // pour ne pas que le click d'ouverture de la popup se confonde
+        // avec le click de fermeture on utilise setTimeout à 0
         setTimeout(() => {
             document.addEventListener("click", fermerPopup)
         }, 0)
@@ -63,7 +71,7 @@ while (v < categories.length){
             ajoutPoint.textContent = film
             listeDeFilms.appendChild(ajoutPoint)
 
-            // Ouverture de la modale avec les infos sur le film
+            // Ouverture de la popup avec les infos sur le film
             ajoutPoint.addEventListener("click", () => {
                 afficherDetailsFilm(film)
             })
