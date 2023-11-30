@@ -9,3 +9,18 @@
     transform: translate(-50%, -50%);
     color: white;
 }
+
+.categorie {
+    display: flex;
+    align-items: center;
+}
+
+ul {
+    list-style-type: none;
+}
+
+ul li {
+    display: inline-block;
+    margin-right: 10px;
+    border: 1px solid black;
+}

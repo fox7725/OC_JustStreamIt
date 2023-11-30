@@ -1,14 +1,19 @@
+//--------------------INITIALISATION DES VARIABLES--------------------
 // URL de départ
 let urlCategorie = 'http://localhost:8000/api/v1/genres/'
+let urlFilm = "http://localhost:8000/api/v1/titles/"
 
-// déclaration de la variable globale "categories"
+// déclaration de la variable globale "categories" qui servira à en afficher 3
 let categories = ["Films les mieux notés"]
 
+// Le film le mieux noté à mettre en avant
+let filmMieuxNote = {}
 // Dictionnaire pour stocker les catégories
 let toutesCategories = {}
 
-// Fonction pour charger les données JSON d'une URL
-async function chargerDonnees(url) {
+//--------------------CHARGEMENT & TRAITEMENT DES DONNEES--------------------
+// Fonction pour charger un fichier JSON
+async function chargerCategories(url) {
     try {
         let reponse = await fetch(url)
         if (!reponse.ok) {
@@ -20,8 +25,8 @@ async function chargerDonnees(url) {
     }
 }
 
-// Fonction pour extraire les données et les ajouter au dictionnaire
-function ajouterDansCategories(data) {
+// Fonction pour extraire les catégories et les ajouter au dictionnaire
+function ajouterCategories(data) {
     data.results.forEach(element => {
         toutesCategories[element.id] = element.name
     });
@@ -44,41 +49,164 @@ function choisirAleatoirement(tableau, n) {
     return resultats
 }
 
-// Fonction principale pour charger et traiter les données
-async function chargerEtTraiterDonnees() {
+// Fonction principale pour charger et traiter les données depuis le JSON
+async function chargerEtTraiterCategories() {
     while (urlCategorie != null) {
-        let donnees = await chargerDonnees(urlCategorie)
+        let donnees = await chargerCategories(urlCategorie)
         if (donnees) {
-            ajouterDansCategories(donnees)
+            ajouterCategories(donnees)
             urlCategorie = donnees.next
         } else {
             urlCategorie = null
         }
     }
-    console.log(toutesCategories)
 
     // Récupération de trois catégories au hasard après le chargement complet
     let valeursCategories = Object.values(toutesCategories)
     categories = choisirAleatoirement(valeursCategories, 3)
-    console.log(categories)
 
     affichage()
 }
 
-// Lancer le processus
-chargerEtTraiterDonnees()
+//Fonction chargeant les 8 meilleurs films (incluant 1 pour la mise en avant)
+async function meilleursFilms() {
+    let tousLesFilmsDic = {}
+    let nombreDeFilmsCharges = 0
+    let page = 1
+    let urlMeilleursFilms = ""
 
-//---------------------------------------------------------------------------------------------
+    while (nombreDeFilmsCharges < 8) {
+        if (page === 1) {
+            urlMeilleursFilms = `${urlFilm}?sort_by=-imdb_score`
+        } else {
+            urlMeilleursFilms = `${urlFilm}?page=${page}&sort_by=-imdb_score`
+        }
+
+        try {
+            let reponse = await fetch(urlMeilleursFilms)
+            if (!reponse.ok) {
+                throw new Error(`Erreur HTTP: ${reponse.status}`)
+            }
+            let donnees = await reponse.json()
+            for (let film of donnees.results) {
+                if (nombreDeFilmsCharges < 8) {
+                    if (nombreDeFilmsCharges === 0) {
+                        filmMieuxNote = film
+                    } else {
+                        tousLesFilmsDic[film.id] = film
+                    }
+                    nombreDeFilmsCharges++
+                } else {
+                    break
+                }
+            }
+            page++
+        } catch (erreur) {
+            console.error("Erreur lors du chargement des meilleurs films : ", erreur)
+            break
+        }
+    }
+    return Object.values(tousLesFilmsDic)
+}
+
+//Fonction chargeant 7 films pour la catégorie demandée
+async function filmsDansCategorie (cat) {
+    let tousLesFilms = new Set()
+    let pages = []
+    let nbPages = 0
+    let urlPremierePage = `${urlFilm}?genre=${cat}`
+
+    try {
+        let reponse = await fetch(urlPremierePage)
+        if (!reponse.ok) {
+            throw new Error(`Erreur HTTP: ${reponse.status}`)
+        }
+        let donnees = await reponse.json()
+        if (donnees.count > 7) { //S'il y a plus de 7 films dans la catégorie
+            nbPages = Math.ceil(donnees.count / 5)
+            while (pages.length < 7) {
+                let pageRandom = Math.floor(Math.random() * nbPages) + 1
+                let urlPage = `${urlFilm}?genre=${cat}&page=${pageRandom}`
+                pages.add(urlPage)
+                let reponsePage = await fetch(urlPage)
+                let donneesPage = await reponsePage.json()
+                let film = donneesPage.results[Math.floor(Math.random() * donneesPage.results.length)]
+                tousLesFilms.add(film.title)
+            }
+        } else { //Si le nombre de film est inférieur ou égal à 7
+
+        }
+    } catch (erreur) {
+        console.error("Erreur lors du chargement des meilleurs films : ", erreur)
+    }
+}
+
+//--------------------GESTION DE L'AFFICHAGE--------------------
+
+//Bloc qui contient le film à mettre en avant
+function blocUne(film, parentElement) {
+    let divUne = document.createElement("div")
+    parentElement.appendChild(divUne)
+
+    let filmImage = document.createElement("img")
+    let filmTitre = document.createElement("div")
+
+    filmImage.src = film.image_url
+    filmImage.alt = `Affiche du film ${film.title}`
+    filmTitre.textContent = film.title
+
+    filmTitre.addEventListener("mouseover", () => {
+        filmTitre.style.fontWeight = "bold"
+    })
+
+    filmTitre.addEventListener("mouseout", () => {
+        filmTitre.style.fontWeight = "normal"
+    })
+
+    divUne.appendChild(filmImage)
+    divUne.appendChild(filmTitre)
+
+    // Ouverture de la popup avec les infos sur le film
+    divUne.addEventListener("click", () => {
+        afficherDetailsFilm(film.title)
+    })
+
+    function afficherDetailsFilm(nomDuFilm) {
+        let popup = document.createElement("div")
+        popup.setAttribute("id", "popupFilm")
+
+        let titreFilm = document.createElement("p")
+        titreFilm.textContent = "Titre du film : " + nomDuFilm
+        popup.appendChild(titreFilm)
+
+        document.body.appendChild(popup)
+
+        function fermerPopup(e) {
+            if (!popup.contains(e.target)) {
+                popup.remove()
+                document.removeEventListener("click", fermerPopup)
+            }
+        }
+
+        // pour ne pas que le click d'ouverture de la popup se confonde
+        // avec le click de fermeture on utilise setTimeout à 0
+        setTimeout(() => {
+            document.addEventListener("click", fermerPopup)
+        }, 0)
+    }
+}
+
+//Bloc qui contient la catégorie et les films
 function blocCategorie (titreCategorie, films, parentElement) {
     let divCategorie = document.createElement("div")
-    parentElement.appendChild(divCategorie);
+    parentElement.appendChild(divCategorie)
 
     let h2 = document.createElement("h2")
     h2.textContent = titreCategorie;
-    h2.style.borderBottom = "1px solid black"
-    divCategorie.appendChild(h2);
+    divCategorie.appendChild(h2)
 
     let ajoutCategorie = document.createElement("div")
+    ajoutCategorie.setAttribute("class", "categorie")
     divCategorie.appendChild(ajoutCategorie)
 
     let boutonGauche = document.createElement("button")
@@ -92,7 +220,8 @@ function blocCategorie (titreCategorie, films, parentElement) {
 
     let currentFilmIndex = 0 // Variable pour suivre l'index actuel des films affichés
 
-    function afficherDetailsFilm(nomDuFilm) {
+    //Popup info du film
+    function afficherDetailsFilm(nomDuFilm, elementTitreCategorie) {
         let popup = document.createElement("div")
         popup.setAttribute("id", "popupFilm")
 
@@ -101,7 +230,7 @@ function blocCategorie (titreCategorie, films, parentElement) {
         popup.appendChild(titreFilm)
 
         let categorieFilm = document.createElement("p")
-        categorieFilm.textContent = "Catégorie du film : " + titreCategorie.textContent
+        categorieFilm.textContent = "Catégorie du film : " + elementTitreCategorie.textContent
         popup.appendChild(categorieFilm)
 
         document.body.appendChild(popup)
@@ -120,69 +249,82 @@ function blocCategorie (titreCategorie, films, parentElement) {
         }, 0)
     }
 
-        function afficherFilms() {
-            // Efface la liste actuelle
-            listeDeFilms.innerHTML = ""
+    function afficherFilms() {
+        // Efface la liste actuelle
+        listeDeFilms.innerHTML = ""
 
-            // Affiche les 4 films suivants ou revient au début si on est à la fin
-            for (let i = currentFilmIndex; i < currentFilmIndex + 4; i++) {
-                let film = films[i % films.length] // Utilise l'opérateur modulo pour revenir au début si nécessaire
-                let ajoutPoint = document.createElement("li")
+        // Affiche les 4 films suivants ou revient au début si on est à la fin
+        for (let i = currentFilmIndex; i < currentFilmIndex + 4; i++) {
+            let index = i % films.length
+            let film = films[index]
 
-                ajoutPoint.addEventListener("mouseover", () => {
-                    ajoutPoint.style.fontWeight = "bold"
-                })
+            let filmElement = document.createElement("li")
+            let filmImage = document.createElement("img")
+            let filmTitre = document.createElement("div")
 
-                ajoutPoint.addEventListener("mouseout", () => {
-                    ajoutPoint.style.fontWeight = "normal"
-                })
+            filmImage.src = film.image_url
+            filmImage.alt = `Affiche du film ${film.title}`
+            filmTitre.textContent = film.title
 
-                ajoutPoint.textContent = film
-                listeDeFilms.appendChild(ajoutPoint)
+            filmTitre.addEventListener("mouseover", () => {
+                filmTitre.style.fontWeight = "bold"
+            })
 
-                // Ouverture de la popup avec les infos sur le film
-                ajoutPoint.addEventListener("click", () => {
-                    afficherDetailsFilm(film)
-                })
-            }
+            filmTitre.addEventListener("mouseout", () => {
+                filmTitre.style.fontWeight = "normal"
+            })
+
+            filmElement.appendChild(filmImage)
+            filmElement.appendChild(filmTitre)
+            listeDeFilms.appendChild(filmElement)
+
+            // Ouverture de la popup avec les infos sur le film
+            filmElement.addEventListener("click", () => {
+                afficherDetailsFilm(film.title, h2)
+            })
         }
+    }
 
+    afficherFilms()
+
+    boutonGauche.addEventListener("click", () => {
+        currentFilmIndex = (currentFilmIndex - 1 + films.length) % films.length
         afficherFilms()
 
-        boutonGauche.addEventListener("click", () => {
-            currentFilmIndex = (currentFilmIndex - 4 + films.length) % films.length
-            afficherFilms()
+    })
 
-        })
+    let boutonDroite = document.createElement("button")
+    let iDroite = document.createElement("i")
+    iDroite.setAttribute("class", "fi-cwlrx4-arrow-wide")
+    boutonDroite.appendChild(iDroite)
+    ajoutCategorie.appendChild(boutonDroite)
 
-        let boutonDroite = document.createElement("button")
-        let iDroite = document.createElement("i")
-        iDroite.setAttribute("class", "fi-cwlrx4-arrow-wide")
-        boutonDroite.appendChild(iDroite)
-        ajoutCategorie.appendChild(boutonDroite)
+    boutonDroite.addEventListener("click", () => {
+        currentFilmIndex = (currentFilmIndex + 1) % films.length // Met à
+        // jour l'index
+        afficherFilms()
+    })
 
-        boutonDroite.addEventListener("click", () => {
-            currentFilmIndex = (currentFilmIndex + 4) % films.length // Met à jour l'index
-            afficherFilms()
-        })
     if (typeof friconix_update === "function") {
        friconix_update()
     }
     return divCategorie
 }
 
-function affichage () {
+async function affichage () {
+    let filmUne = document.getElementById("filmUne")
     let presentation = document.getElementById("ensembleCategories")
-    categories.forEach(categorie => {
-        let films = ["film 1", "film 2", "film 3", "film 4", "film 5", "film 6", "film 7"]
+    for (const categorie of categories) {
+        let films = []
+        if (categorie === "Films les mieux notés") {
+            films = await meilleursFilms()
+        } else {
+            films = ["film 1", "film 2", "film 3", "film 4", "film 5", "film 6", "film 7"]
+        }
         blocCategorie(categorie,films,presentation)
-    })
-
-    let retourLigne = document.createElement("p")
-    let retourLigne2 = document.createElement("p")
-    presentation.appendChild(retourLigne2)
-    presentation.appendChild(retourLigne)
-    retourLigne.style.borderBottom = "5px solid black"
-    presentation.appendChild(retourLigne)
-
+    }
+    blocUne(filmMieuxNote, filmUne)
 }
+
+// Lancer le processus
+chargerEtTraiterCategories()
