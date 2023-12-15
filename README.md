@@ -6,6 +6,7 @@
 - [Dépendances](#dépendances)
 - [Installation](#installation)
 - [Utilisation](#utilisation)
+- [Paternité et remerciements](#paternité-et-remerciements)
 
 ## Description du projet
 
