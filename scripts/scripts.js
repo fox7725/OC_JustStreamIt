@@ -111,50 +111,61 @@ async function meilleursFilms() {
 
 //Fonction chargeant 7 films pour la catégorie demandée
 async function filmsDansCategorie (cat) {
-    let tousLesFilms = new Set()
-    let pages = []
-    let nbPages = 0
+    let tousLesFilms = {}
+    let nombreDeFilmsCharges = 0
+    let page = 1
+    let urlFilms = ""
+    let listeUrlFilms = []
     let urlPremierePage = `${urlFilm}?genre=${cat}`
 
-    try {
-        let reponse = await fetch(urlPremierePage)
-        if (!reponse.ok) {
-            throw new Error(`Erreur HTTP: ${reponse.status}`)
-        }
-        let donnees = await reponse.json()
-        console.log("donnee.count" + donnees.count)
-        if (donnees.count >= 7) { //S'il y a plus de 7 films dans la catégorie
-            nbPages = Math.ceil(donnees.count / 5)
-            console.log(nbPages)
-            console.log(pages)
-            while (pages.length < 7) {
-                let pageRandom = Math.floor(Math.random() * nbPages) + 1
-                console.log("pagerandom" + pageRandom)
-                let urlPage = `${urlFilm}?genre=${cat}&page=${pageRandom}`
-                console.log(urlPage)
-                pages.push(urlPage)
-                let reponsePage = await fetch(urlPage)
-                let donneesPage = await reponsePage.json()
-                let film = donneesPage.results[Math.floor(Math.random() * donneesPage.results.length)]
-                tousLesFilms.add(film.title)
-            }
-        } else { //Si le nombre de film est inférieur ou égal à 7
-            nbPages = Math.ceil(donnees.count / 5)
-            console.log(nbPages)
-            for (let i = 0; i < donnees.count; i++) {
-                let pageRandom = Math.floor(Math.random() * nbPages) + 1
-                let urlPage = `${urlFilm}?genre=${cat}&page=${pageRandom}`
-                pages.push(urlPage)
-                let reponsePage = await fetch(urlPage)
-                let donneesPage = await reponsePage.json()
-                let film = donneesPage.results[Math.floor(Math.random() * donneesPage.results.length)]
-                tousLesFilms.add(film.title)
-            }
-        }
-    } catch (erreur) {
-        console.error("Erreur lors du chargement des films : ", erreur)
+    let reponse = await fetch(urlPremierePage)
+    if (!reponse.ok) {
+        throw new Error(`Erreur HTTP: ${reponse.status}`)
     }
-    return Array.from(tousLesFilms)
+    let donnees = await reponse.json()
+
+    //Si le nombre de films est inférieur ou égal à 7, on affiche tous les
+    // films
+    if (donnees.count <= 7) {
+        while (nombreDeFilmsCharges < donnees.count) {
+            urlFilms = `${urlPremierePage}&page=${page}`
+
+            try {
+                let reponseFilms = await fetch(urlFilms)
+                if (!reponse.ok) {
+                    throw new Error(`Erreur HTTP: ${reponseFilms.status}`)
+                }
+                let donneesFilms = await reponseFilms.json()
+                for (let film of donneesFilms.results) {
+                    tousLesFilms[film.id] = film
+                    nombreDeFilmsCharges++
+                }
+                page++
+            } catch (erreur) {
+                console.error("Erreur lors du chargement des films dans la" +
+                    ` catégorie : ${cat}`, erreur)
+            }
+        }
+    } else {
+        //On calcule le nombre de pages
+        let nbPages = Math.ceil(donnees.count / 5)
+        while (listeUrlFilms.length < 7){
+            let pageRandom = Math.floor(Math.random() * nbPages) + 1
+            listeUrlFilms.push(`${urlPremierePage}&page=${pageRandom}`)
+        }
+        for (let url of listeUrlFilms) {
+            let reponseFilms = await fetch(url)
+            if (!reponse.ok) {
+                throw new Error(`Erreur HTTP: ${reponseFilms.status}`)
+            }
+            let donneesPage = await reponseFilms.json()
+            let film = donneesPage.results[Math.floor(Math.random() * donneesPage.results.length)]
+            tousLesFilms[film.id] = film
+        }
+    }
+    return Object.values(tousLesFilms)
+
+
 }
 
 //--------------------GESTION DE L'AFFICHAGE--------------------
@@ -181,7 +192,19 @@ async function afficherDetailsFilm(idDuFilm) {
     let infoFilm = await recupInfoFilm()
 
     let photoFilm = document.createElement("img")
-    photoFilm.src = infoFilm.image_url
+    fetch(infoFilm.image_url, { method : "HEAD"})
+        .then(res => {
+            if (!res.ok) {
+                photoFilm.src = "images/pas_photo.jpg"
+            } else {
+                photoFilm.src = infoFilm.image_url
+            }
+        }).catch(error => {
+            console.log("Une erreur s'est produite lors de la récupération" +
+                ` de l'image du film : ${infoFilm.title}`)
+            photoFilm.src = "images/pas_photo.jpg"
+    })
+
     popup.appendChild(photoFilm)
 
     let titreFilm = document.createElement("p")
@@ -246,7 +269,18 @@ function blocUne(film, parentElement) {
     let filmImage = document.createElement("img")
     let filmTitre = document.createElement("div")
 
-    filmImage.src = film.image_url
+    fetch(film.image_url, { method : "HEAD"})
+        .then(res => {
+            if (!res.ok) {
+                filmImage.src = "images/pas_photo.jpg"
+            } else {
+                filmImage.src = film.image_url
+            }
+        }).catch(error => {
+            console.log("Une erreur s'est produite lors de la récupération" +
+                ` de l'image du film : ${film.title}`)
+            filmImage.src = "images/pas_photo.jpg"
+    })
     filmImage.alt = `Affiche du film ${film.title}`
     filmTitre.textContent = film.title
 
@@ -284,7 +318,10 @@ function blocCategorie (titreCategorie, films, parentElement) {
     let iGauche = document.createElement("i")
     iGauche.setAttribute("class", "fi-cwllx4-arrow-wide")
     boutonGauche.appendChild(iGauche)
-    ajoutCategorie.appendChild(boutonGauche)
+    //On affiche les fleches que si le nombre de film est plus grand que 4
+    if (films.length >= 4) {
+        ajoutCategorie.appendChild(boutonGauche)
+    }
 
     let listeDeFilms = document.createElement("ul")
     ajoutCategorie.appendChild(listeDeFilms)
@@ -296,7 +333,7 @@ function blocCategorie (titreCategorie, films, parentElement) {
         listeDeFilms.innerHTML = ""
 
         // Affiche les 4 films suivants ou revient au début si on est à la fin
-        for (let i = currentFilmIndex; i < currentFilmIndex + 4; i++) {
+        for (let i = currentFilmIndex; i < Math.min(currentFilmIndex + 4, films.length); i++) {
             let index = i % films.length
             let film = films[index]
 
@@ -305,7 +342,18 @@ function blocCategorie (titreCategorie, films, parentElement) {
             let filmTitre = document.createElement("div")
             filmTitre.setAttribute("class", "titreFilmNorm")
 
-            filmImage.src = film.image_url
+            fetch(film.image_url, { method : "HEAD"})
+                .then(res => {
+                    if (!res.ok) {
+                        filmImage.src = "images/pas_photo.jpg"
+                    } else {
+                        filmImage.src = film.image_url
+                    }
+                }).catch(error => {
+                    console.log("Une erreur s'est produite lors de la" +
+                        ` récupération de l'image du film : ${film.title}`)
+                    filmImage.src = "images/pas_photo.jpg"
+            })
             filmImage.alt = `Affiche du film ${film.title}`
             filmTitre.textContent = film.title
 
@@ -340,7 +388,10 @@ function blocCategorie (titreCategorie, films, parentElement) {
     let iDroite = document.createElement("i")
     iDroite.setAttribute("class", "fi-cwlrx4-arrow-wide")
     boutonDroite.appendChild(iDroite)
-    ajoutCategorie.appendChild(boutonDroite)
+    //On affiche les fleches que si le nombre de film est plus grand que 4
+    if (films.length >= 4) {
+        ajoutCategorie.appendChild(boutonDroite)
+    }
 
     boutonDroite.addEventListener("click", () => {
         currentFilmIndex = (currentFilmIndex + 1) % films.length // Met à
