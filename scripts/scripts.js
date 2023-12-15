@@ -122,26 +122,121 @@ async function filmsDansCategorie (cat) {
             throw new Error(`Erreur HTTP: ${reponse.status}`)
         }
         let donnees = await reponse.json()
-        if (donnees.count > 7) { //S'il y a plus de 7 films dans la catégorie
+        console.log("donnee.count" + donnees.count)
+        if (donnees.count >= 7) { //S'il y a plus de 7 films dans la catégorie
             nbPages = Math.ceil(donnees.count / 5)
+            console.log(nbPages)
+            console.log(pages)
             while (pages.length < 7) {
                 let pageRandom = Math.floor(Math.random() * nbPages) + 1
+                console.log("pagerandom" + pageRandom)
                 let urlPage = `${urlFilm}?genre=${cat}&page=${pageRandom}`
-                pages.add(urlPage)
+                console.log(urlPage)
+                pages.push(urlPage)
                 let reponsePage = await fetch(urlPage)
                 let donneesPage = await reponsePage.json()
                 let film = donneesPage.results[Math.floor(Math.random() * donneesPage.results.length)]
                 tousLesFilms.add(film.title)
             }
         } else { //Si le nombre de film est inférieur ou égal à 7
-
+            nbPages = Math.ceil(donnees.count / 5)
+            console.log(nbPages)
+            for (let i = 0; i < donnees.count; i++) {
+                let pageRandom = Math.floor(Math.random() * nbPages) + 1
+                let urlPage = `${urlFilm}?genre=${cat}&page=${pageRandom}`
+                pages.push(urlPage)
+                let reponsePage = await fetch(urlPage)
+                let donneesPage = await reponsePage.json()
+                let film = donneesPage.results[Math.floor(Math.random() * donneesPage.results.length)]
+                tousLesFilms.add(film.title)
+            }
         }
     } catch (erreur) {
-        console.error("Erreur lors du chargement des meilleurs films : ", erreur)
+        console.error("Erreur lors du chargement des films : ", erreur)
     }
+    return Array.from(tousLesFilms)
 }
 
 //--------------------GESTION DE L'AFFICHAGE--------------------
+
+
+//Popup info du film
+async function afficherDetailsFilm(idDuFilm) {
+    let popup = document.createElement("div")
+    popup.setAttribute("id", "popupFilm")
+
+    //On charge les infos du film
+    let urlInfoFilm = urlFilm + idDuFilm
+    async function recupInfoFilm() {
+        try {
+            let reponse = await fetch(urlInfoFilm)
+            if (!reponse.ok) {
+                throw new Error(`Erreur HTTP: ${reponse.status}`)
+            }
+            return await reponse.json();
+        } catch (erreur) {
+            console.error("Erreur lors du chargement des données : ", erreur)
+        }
+    }
+    let infoFilm = await recupInfoFilm()
+
+    let photoFilm = document.createElement("img")
+    photoFilm.src = infoFilm.image_url
+    popup.appendChild(photoFilm)
+
+    let titreFilm = document.createElement("p")
+    titreFilm.textContent = "Titre du film : " + infoFilm.title + " -" +
+        " Score Imdb : " + infoFilm.imdb_score
+    popup.appendChild(titreFilm)
+
+    let BoxOffice = document.createElement("p")
+    BoxOffice.textContent = "Résultat au Box Office : " + infoFilm.worldwide_gross_income + " $"
+    popup.appendChild(BoxOffice)
+
+    let directeurFilm = document.createElement("p")
+    directeurFilm.textContent = "De : " + infoFilm.directors
+    popup.appendChild(directeurFilm)
+
+    let acteursFilm = document.createElement("p")
+    acteursFilm.textContent = "Avec : " + infoFilm.actors
+    popup.appendChild(acteursFilm)
+
+    let dureeFilm = document.createElement("p")
+    dureeFilm.textContent = "Durée : " + infoFilm.duration + " minutes"
+    popup.appendChild(dureeFilm)
+
+    let anneeFilm = document.createElement("p")
+    anneeFilm.textContent = "Année de sortie : " + infoFilm.year + " en" +
+        " " + infoFilm.countries
+    popup.appendChild(anneeFilm)
+
+    let categorieFilm = document.createElement("p")
+    categorieFilm.textContent = "Genres : " + infoFilm.genres
+    popup.appendChild(categorieFilm)
+
+    let evaluation = document.createElement("p")
+    evaluation.textContent = "Notre évaluation : " + infoFilm.rated
+    popup.appendChild(evaluation)
+
+    let resume = document.createElement("p")
+    resume.textContent = "Résumé : " + infoFilm.long_description
+    popup.appendChild(resume)
+
+    document.body.appendChild(popup)
+
+    function fermerPopup(e) {
+        if (!popup.contains(e.target)) {
+            popup.remove()
+            document.removeEventListener("click", fermerPopup)
+        }
+    }
+
+    // pour ne pas que le click d'ouverture de la popup se confonde
+    // avec le click de fermeture on utilise setTimeout à 0
+    setTimeout(() => {
+        document.addEventListener("click", fermerPopup)
+    }, 0)
+}
 
 //Bloc qui contient le film à mettre en avant
 function blocUne(film, parentElement) {
@@ -168,32 +263,8 @@ function blocUne(film, parentElement) {
 
     // Ouverture de la popup avec les infos sur le film
     divUne.addEventListener("click", () => {
-        afficherDetailsFilm(film.title)
+        afficherDetailsFilm(film.id)
     })
-
-    function afficherDetailsFilm(nomDuFilm) {
-        let popup = document.createElement("div")
-        popup.setAttribute("id", "popupFilm")
-
-        let titreFilm = document.createElement("p")
-        titreFilm.textContent = "Titre du film : " + nomDuFilm
-        popup.appendChild(titreFilm)
-
-        document.body.appendChild(popup)
-
-        function fermerPopup(e) {
-            if (!popup.contains(e.target)) {
-                popup.remove()
-                document.removeEventListener("click", fermerPopup)
-            }
-        }
-
-        // pour ne pas que le click d'ouverture de la popup se confonde
-        // avec le click de fermeture on utilise setTimeout à 0
-        setTimeout(() => {
-            document.addEventListener("click", fermerPopup)
-        }, 0)
-    }
 }
 
 //Bloc qui contient la catégorie et les films
@@ -220,35 +291,6 @@ function blocCategorie (titreCategorie, films, parentElement) {
 
     let currentFilmIndex = 0 // Variable pour suivre l'index actuel des films affichés
 
-    //Popup info du film
-    function afficherDetailsFilm(nomDuFilm, elementTitreCategorie) {
-        let popup = document.createElement("div")
-        popup.setAttribute("id", "popupFilm")
-
-        let titreFilm = document.createElement("p")
-        titreFilm.textContent = "Titre du film : " + nomDuFilm
-        popup.appendChild(titreFilm)
-
-        let categorieFilm = document.createElement("p")
-        categorieFilm.textContent = "Catégorie du film : " + elementTitreCategorie.textContent
-        popup.appendChild(categorieFilm)
-
-        document.body.appendChild(popup)
-
-        function fermerPopup(e) {
-            if (!popup.contains(e.target)) {
-                popup.remove()
-                document.removeEventListener("click", fermerPopup)
-            }
-        }
-
-        // pour ne pas que le click d'ouverture de la popup se confonde
-        // avec le click de fermeture on utilise setTimeout à 0
-        setTimeout(() => {
-            document.addEventListener("click", fermerPopup)
-        }, 0)
-    }
-
     function afficherFilms() {
         // Efface la liste actuelle
         listeDeFilms.innerHTML = ""
@@ -261,17 +303,18 @@ function blocCategorie (titreCategorie, films, parentElement) {
             let filmElement = document.createElement("li")
             let filmImage = document.createElement("img")
             let filmTitre = document.createElement("div")
+            filmTitre.setAttribute("class", "titreFilmNorm")
 
             filmImage.src = film.image_url
             filmImage.alt = `Affiche du film ${film.title}`
             filmTitre.textContent = film.title
 
             filmTitre.addEventListener("mouseover", () => {
-                filmTitre.style.fontWeight = "bold"
+                filmTitre.setAttribute("class", "titreFilmGras")
             })
 
             filmTitre.addEventListener("mouseout", () => {
-                filmTitre.style.fontWeight = "normal"
+                filmTitre.setAttribute("class", "titreFilmNorm")
             })
 
             filmElement.appendChild(filmImage)
@@ -280,7 +323,7 @@ function blocCategorie (titreCategorie, films, parentElement) {
 
             // Ouverture de la popup avec les infos sur le film
             filmElement.addEventListener("click", () => {
-                afficherDetailsFilm(film.title, h2)
+                afficherDetailsFilm(film.id)
             })
         }
     }
@@ -319,7 +362,7 @@ async function affichage () {
         if (categorie === "Films les mieux notés") {
             films = await meilleursFilms()
         } else {
-            films = ["film 1", "film 2", "film 3", "film 4", "film 5", "film 6", "film 7"]
+            films = await filmsDansCategorie(categorie)
         }
         blocCategorie(categorie,films,presentation)
     }

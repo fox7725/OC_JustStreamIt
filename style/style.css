@@ -13,6 +13,7 @@
 .categorie {
     display: flex;
     align-items: center;
+    justify-content: center;
 }
 
 ul {
@@ -23,4 +24,14 @@ ul li {
     display: inline-block;
     margin-right: 10px;
     border: 1px solid black;
+}
+
+.titreFilmGras {
+    font-weight : bold;
+    align-items: center;
+}
+
+.titreFilmNorm {
+    font-weight: normal;
+    align-items: center;
 }
