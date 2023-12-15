@@ -34,3 +34,9 @@ Pour installer le projet localement, suivez les étapes suivantes:
 
 Pour utiliser l'application, il suffit de naviguer sur la page d'accueil. Les meilleures films sont présentés dans différentes catégories.
 Cliquez sur un film pour voir plus de détails, y compris le titre, la note, le genre et un résumé.
+
+## Paternité et remerciements
+
+Ce projet est réalisé a été réalisé par Christophe RENARD dans le cadre de la 
+formation `dévelopeur d'application Python` chez Open ClassRooms.
+Mes plus chaleureux remerciements à mon mentor pour son accompagnement !
