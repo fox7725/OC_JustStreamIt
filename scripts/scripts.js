@@ -12,6 +12,17 @@ let filmMieuxNote = {}
 let toutesCategories = {}
 
 //--------------------CHARGEMENT & TRAITEMENT DES DONNEES--------------------
+// Fonction pour l'affichage des catégories dans le menu déroulant
+function genererMenuCategories() {
+    let dropdownMenu = document.querySelector('.dropdown-menu');
+    for (let id in toutesCategories) {
+        let dropdownLink = document.createElement('a');
+        dropdownLink.href = '#';
+        dropdownLink.textContent = toutesCategories[id];
+        dropdownMenu.appendChild(dropdownLink);
+    }
+}
+
 // Fonction pour charger un fichier JSON
 async function chargerCategories(url) {
     try {
@@ -66,6 +77,9 @@ async function chargerEtTraiterCategories() {
     categories = choisirAleatoirement(valeursCategories, 3)
 
     affichage()
+
+    //Ajout des catégories dans le menu déroulant
+    genererMenuCategories()
 }
 
 //Fonction chargeant les 8 meilleurs films (incluant 1 pour la mise en avant)
@@ -207,9 +221,8 @@ async function afficherDetailsFilm(idDuFilm) {
 
     popup.appendChild(photoFilm)
 
-    let titreFilm = document.createElement("p")
-    titreFilm.textContent = "Titre du film : " + infoFilm.title + " -" +
-        " Score Imdb : " + infoFilm.imdb_score
+    let titreFilm = document.createElement("h2")
+    titreFilm.textContent = infoFilm.title + " - Score Imdb : " + infoFilm.imdb_score
     popup.appendChild(titreFilm)
 
     let BoxOffice = document.createElement("p")
@@ -340,6 +353,7 @@ function blocCategorie (titreCategorie, films, parentElement) {
 
             let filmElement = document.createElement("li")
             let filmImage = document.createElement("img")
+            filmImage.setAttribute("class", "imgFilm")
             let filmTitre = document.createElement("div")
             filmTitre.setAttribute("class", "titreFilmNorm")
 

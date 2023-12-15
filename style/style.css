@@ -2,6 +2,11 @@ body {
     background-color: darkcyan;
 }
 
+h2 {
+    font-size: 2em;
+    text-align: center;
+}
+
 #popupFilm {
     display: flex;
     justify-content: center;
@@ -53,16 +58,76 @@ ul {
 
 ul li {
     display: inline-block;
+    align-content: center;
+    padding: 5px;
+    background-color: yellow;
     margin-right: 10px;
     border: 1px solid black;
 }
 
 .titreFilmGras {
     font-weight : bold;
-    align-items: center;
+    text-align: center;
 }
 
 .titreFilmNorm {
     font-weight: normal;
+    text-align: center;
+}
+
+.imgFilm {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
+    padding: 10px;
+    background-color: darkcyan;
+    font-size: 2em;
+    flex-direction: row-reverse;
+}
+
+.logo {
+    order: 2;
+}
+
+.menu a {
+    margin-right: 20px;
+    text-decoration: none;
+    color: #333333;
+}
+
+.navbar .menu a:hover {
+    font-weight: bold;
+    color: darkblue;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    background-color: darkcyan;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.dropdown-menu a {
+    color: black;
+    font-size: 0.5em;
+    padding: 5px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown:hover .dropdown-menu {
+    display: block;
 }
