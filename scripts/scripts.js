@@ -264,6 +264,7 @@ async function afficherDetailsFilm(idDuFilm) {
 //Bloc qui contient le film à mettre en avant
 function blocUne(film, parentElement) {
     let divUne = document.createElement("div")
+    divUne.setAttribute("class", "categorieUne")
     parentElement.appendChild(divUne)
 
     let filmImage = document.createElement("img")
@@ -282,7 +283,7 @@ function blocUne(film, parentElement) {
             filmImage.src = "images/pas_photo.jpg"
     })
     filmImage.alt = `Affiche du film ${film.title}`
-    filmTitre.textContent = film.title
+    filmTitre.textContent = `Le coup de coeur des spectateurs : ${film.title}`
 
     filmTitre.addEventListener("mouseover", () => {
         filmTitre.style.fontWeight = "bold"
